@@ -1,9 +1,9 @@
 // route that handles SMS sending logic
 import express from "express";
 import twilio from "twilio";
-import admin from "firebase-admin";
+// import admin from "firebase-admin";
 import app from "../firebaseConfig.js";
-import serviceAccount from "../serviceAccountKey.json" assert { type: "json" };
+// import serviceAccount from "../serviceAccountKey.json" assert { type: "json" };
 import { getFirestore, doc, collection, setDoc } from "firebase/firestore";
 import "dotenv/config";
 
