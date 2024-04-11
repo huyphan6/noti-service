@@ -10,15 +10,19 @@ import "dotenv/config";
 const router = express.Router();
 const db = getFirestore(app);
 
-const accountSid = process.env.TWILIO_ACCOUNT_SID;
-const authToken = process.env.TWILIO_AUTH_TOKEN;
-const client = twilio(accountSid, authToken);
+// const accountSid = process.env.TWILIO_ACCOUNT_SID;
+// const authToken = process.env.TWILIO_AUTH_TOKEN;
+// const client = twilio(accountSid, authToken);
 
 router.post("/", async (request, response) => {
     try {
+        const accountSid = request.body.accountSid;
+        const authToken = request.body.authToken;
+        const client = twilio(accountSid, authToken);
         const customers = request.body.customers;
-        const orderRef = collection(db, "orders")
-        customers.map( async (customer) => {
+
+        const orderRef = collection(db, "orders");
+        customers.map(async (customer) => {
             const name = customer.name;
             const phoneNumber = customer.phoneNumber;
             const orderNumber = customer.orderNumber;
@@ -29,24 +33,20 @@ router.post("/", async (request, response) => {
                 phoneNumber: phoneNumber,
                 orderNumber: orderNumber,
                 date: date,
-            })
+            });
 
-            console.log(`Name: ${name}`);
-            console.log(`Phone number: ${phoneNumber}`);
-            console.log(`Order number: ${orderNumber}`);
-            console.log(`Date: ${date}`);
+            const messageBody = `Winn Cleaners: Hello ${name},\n\nYour order #${orderNumber} is ready for pickup! Please call us @ (617) 523-6860 or visit https://www.winncleaners.com/ with any questions or concerns.\n\nThank you!`;
 
-            const messageBody= `Winn Cleaners: Hello ${name},\n\nYour order #${orderNumber} is ready for pickup! Please call us @ (617) 523-6860 or visit https://www.winncleaners.com/ with any questions or concerns.\n\nThank you!`;
-
-            // client.messages.create({
-            //     to: phoneNumber,
-            //     from: process.env.TWILIO_PHONE_NUMBER,
-            //     body: messageBody,
-            // })
-            // .then((message) => console.log(message.sid));
+            client.messages
+                .create({
+                    to: phoneNumber,
+                    from: process.env.TWILIO_PHONE_NUMBER,
+                    body: messageBody,
+                })
+                .then((message) => console.log(message));
         });
 
-        response.send({ message: "SMS sent!" });
+        response.send({ message: "SMS sent successfully!" });
     } catch (error) {
         console.log(error);
         response.status(500).send(error);
