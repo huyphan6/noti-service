@@ -14,7 +14,7 @@ const db = getFirestore(app);
 // const authToken = process.env.TWILIO_AUTH_TOKEN;
 // const client = twilio(accountSid, authToken);
 
-router.post("/", async (request, response) => { 
+router.post("/", async (request, response) => {
     try {
         const accountSid = request.body.accountSid;
         const authToken = request.body.authToken;
@@ -43,10 +43,13 @@ router.post("/", async (request, response) => {
                     from: process.env.TWILIO_PHONE_NUMBER,
                     body: messageBody,
                 })
-                .then((message) => console.log(message));
+                .then((message) => {
+                    console.log(message);
+                    response
+                        .status(200)
+                        .send({ message: message, success: true });
+                });
         });
-
-        response.send({ message: "SMS sent successfully!" });
     } catch (error) {
         console.log(error);
         response.status(500).send(error);
