@@ -10,10 +10,10 @@ describe("SMS API Endpoint", () => {
                 authToken: process.env.TWILIO_AUTH_TOKEN,
                 customers: [
                     {
-                        name: "John Doe",
+                        name: "Huy P",
                         phoneNumber: "+16174330481",
                         orderNumber: "12345",
-                        date: "2022-01-01",
+                        date: "04/16/20224",
                     },
                 ],
             });
@@ -24,8 +24,5 @@ describe("SMS API Endpoint", () => {
         // The response should contain a message object and a success boolean
         expect(res.body).toHaveProperty("message");
         expect(res.body).toHaveProperty("success");
-
-        // done
-        end();
     });
 });

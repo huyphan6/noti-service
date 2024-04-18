@@ -45,9 +45,16 @@ router.post("/", async (request, response) => {
                 })
                 .then((message) => {
                     console.log(message);
-                    response
-                        .status(200)
-                        .send({ message: message, success: true });
+                });
+
+            response
+                .status(200)
+                .send({
+                    message:
+                        messages.length === 1
+                            ? `Message sent successfully`
+                            : `${messages.length} Messages sent successfully`,
+                    success: true,
                 });
         });
     } catch (error) {
