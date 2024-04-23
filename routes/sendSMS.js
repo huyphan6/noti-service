@@ -20,6 +20,7 @@ router.post("/", async (request, response) => {
         const authToken = request.body.authToken;
         const client = twilio(accountSid, authToken);
         const customers = request.body.customers;
+        const surveyLink = process.env.SURVEY_LINK;
 
         const orderRef = collection(db, "orders");
         customers.map(async (customer) => {
@@ -35,7 +36,7 @@ router.post("/", async (request, response) => {
                 date: date,
             });
 
-            const messageBody = `Winn Cleaners: Hello ${name},\n\nYour order #${orderNumber} is ready for pickup! Please call us @ (617) 523-6860 or visit https://www.winncleaners.com/ with any questions or concerns.\n\nThank you!`;
+            const messageBody = `Winn Cleaners: Hello ${name},\n\nYour order #${orderNumber} is ready for pickup! Please call us @ (617) 523-6860 or visit https://www.winncleaners.com/ with any questions or concerns.\n\nYour satisfaction is important to us. Would you mind taking a moment to share your feedback? We value your input! Click here ${surveyLink} to complete a short survey.\n\nThank you for choosing Winn Cleaners!`;
 
             client.messages
                 .create({
@@ -43,15 +44,12 @@ router.post("/", async (request, response) => {
                     from: process.env.TWILIO_PHONE_NUMBER,
                     body: messageBody,
                 })
-                .then((message) => {
-                    console.log(message);
-                });
 
             response
                 .status(200)
                 .send({
                     message:
-                        messages.length === 1
+                        customers.length === 1
                             ? `Message sent successfully`
                             : `${messages.length} Messages sent successfully`,
                     success: true,

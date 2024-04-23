@@ -12,8 +12,8 @@ describe("SMS API Endpoint", () => {
                     {
                         name: "Huy P",
                         phoneNumber: "+16174330481",
-                        orderNumber: "12345",
-                        date: "04/16/20224",
+                        orderNumber: "123456",
+                        date: "04/23/20224",
                     },
                 ],
             });
