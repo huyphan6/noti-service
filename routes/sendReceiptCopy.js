@@ -21,7 +21,7 @@ router.post("/", async (request, response) => {
         const customerName = orderForm.customerName;
         const formattedPhoneNumber = `+1${phoneNumber}`;
 
-        const messageBody = `Winn Cleaners: Hello ${customerName}! \n\n Your order receipt is attached. Thank you for choosing Winn! \n\n ${JSON.stringify(
+        const messageBody = `Winn Cleaners: Hello ${customerName}! \n\nYour order receipt is attached. Thank you for choosing Winn! \n\n${JSON.stringify(
             orderForm,
             null,
             4
