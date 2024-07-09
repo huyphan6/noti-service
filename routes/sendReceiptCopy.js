@@ -21,9 +21,13 @@ router.post("/", async (request, response) => {
         const customerName = orderForm.customerName;
         const formattedPhoneNumber = `+1${phoneNumber}`;
 
-        const messageBody = `Winn Cleaners: Hello ${customerName}! \n\n Your order receipt is attached. Thank you for choosing Winn! \n\n ${JSON.stringify(orderForm, null, 4)}`;
+        const messageBody = `Winn Cleaners: Hello ${customerName}! \n\n Your order receipt is attached. Thank you for choosing Winn! \n\n ${JSON.stringify(
+            orderForm,
+            null,
+            4
+        )}`;
 
-        client.messages.create({
+        const twilioResponse = await client.messages.create({
             to: formattedPhoneNumber,
             from: process.env.TWILIO_PHONE_NUMBER,
             body: messageBody,
@@ -31,6 +35,7 @@ router.post("/", async (request, response) => {
 
         response.status(200).send({
             message: `Message sent successfully`,
+            sid: twilioResponse.sid,
             success: true,
         });
     } catch (error) {
