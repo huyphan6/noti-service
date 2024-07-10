@@ -12,8 +12,8 @@ const db = getFirestore(app);
 
 router.post("/", async (request, response) => {
     try {
-        const accountSid = request.body.accountSid;
-        const authToken = request.body.authToken;
+        const accountSid = process.env.SMS_API_ACCOUNT_SID; 
+        const authToken = process.env.SMS_API_AUTH_TOKEN;
         const client = twilio(accountSid, authToken);
 
         const orderForm = request.body.orderForm;
