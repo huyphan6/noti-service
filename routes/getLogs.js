@@ -18,8 +18,13 @@ router.post("/", async (request, response) => {
     try {
         const accountSid = request.body.accountSid;
         const authToken = request.body.authToken;
+        const dateRange = request.body.dateRange
         const client = twilio(accountSid, authToken);
-        const logs = await client.messages.list({ limit: 20 });
+
+        const logs = await client.messages.list({
+            dateSentAfter: dateRange[0],
+            dateSentBefore: dateRange[1],
+        });
 
         response.status(200).send(logs);
     } catch (error) {
