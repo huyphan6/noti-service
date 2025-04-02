@@ -17,13 +17,10 @@ router.post("/", async (request, response) => {
         const client = twilio(accountSid, authToken);
         const customers = request.body.customers;
         const surveyLink = process.env.SURVEY_LINK;
-
         const orderRef = collection(db, "orders");
-        customers.map(async (customer) => {
-            const name = customer.name;
-            const phoneNumber = customer.phoneNumber;
-            const orderNumber = customer.orderNumber;
-            const date = customer.date;
+
+        const tasks = customers.map(async (customer) => {
+            const { name, phoneNumber, orderNumber, date } = customer;
 
             await setDoc(doc(orderRef), {
                 name: name,
@@ -34,22 +31,21 @@ router.post("/", async (request, response) => {
 
             const messageBody = `Winn Cleaners: Hello ${name},\n\nYour order #${orderNumber} is ready for pickup! Please call us @ (617) 523-6860 or visit https://www.winncleaners.com/ with any questions or concerns.\n\nYour satisfaction is important to us. Would you mind taking a moment to share your feedback? We value your input! Click here ${surveyLink} to complete a short survey.\n\nThank you for choosing Winn Cleaners!`;
 
-            client.messages
-                .create({
-                    to: phoneNumber,
-                    from: process.env.TWILIO_PHONE_NUMBER,
-                    body: messageBody,
-                })
+            return client.messages.create({
+                to: phoneNumber,
+                from: process.env.TWILIO_PHONE_NUMBER,
+                body: messageBody,
+            });
+        });
 
-            response
-                .status(200)
-                .send({
-                    message:
-                        customers.length === 1
-                            ? `Message sent successfully`
-                            : `${messages.length} Messages sent successfully`,
-                    success: true,
-                });
+        const totalMessages = await Promise.all(tasks);
+
+        response.status(200).send({
+            message:
+                customers.length === 1
+                    ? `Message sent successfully`
+                    : `${totalMessages.length} Messages sent successfully`,
+            success: true,
         });
     } catch (error) {
         console.log(error);

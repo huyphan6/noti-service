@@ -10,10 +10,10 @@ describe("SMS API Endpoint", () => {
                 authToken: process.env.TWILIO_AUTH_TOKEN,
                 customers: [
                     {
-                        name: "Huy P",
+                        name: "Huy Phan",
                         phoneNumber: "+16174330481",
-                        orderNumber: "123456",
-                        date: "04/23/20224",
+                        orderNumber: "020202",
+                        date: "04/02/2025",
                     },
                 ],
             });
