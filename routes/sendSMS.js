@@ -12,9 +12,17 @@ const db = getFirestore(app);
 
 router.post("/", async (request, response) => {
     try {
-        const accountSid = request.body.accountSid;
-        const authToken = request.body.authToken;
+        // Authenticate using API key from request headers
+        if (request.headers.apikey !== process.env.API_KEY) {
+            return response
+                .status(401)
+                .send({ message: "Unauthorized", success: false });
+        }
+
+        const accountSid = process.env.TWILIO_ACCOUNT_SID
+        const authToken = process.env.TWILIO_AUTH_TOKEN
         const client = twilio(accountSid, authToken);
+
         const customers = request.body.customers;
         const surveyLink = process.env.SURVEY_LINK;
         const orderRef = collection(db, "orders");

@@ -5,14 +5,13 @@ describe("SMS API Endpoint", () => {
     test("POST /sendSMS", async () => {
         const res = await request(app)
             .post("/sendSMS")
+            .set('apikey', process.env.API_KEY)  // Add the API key to headers
             .send({
-                accountSid: process.env.TWILIO_ACCOUNT_SID,
-                authToken: process.env.TWILIO_AUTH_TOKEN,
                 customers: [
                     {
                         name: "Huy Phan",
                         phoneNumber: "+16174330481",
-                        orderNumber: "020202",
+                        orderNumber: "6868",
                         date: "04/02/2025",
                     },
                 ],
