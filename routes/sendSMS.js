@@ -19,13 +19,49 @@ router.post("/", async (request, response) => {
                 .send({ message: "Unauthorized", success: false });
         }
 
-        const accountSid = process.env.TWILIO_ACCOUNT_SID
-        const authToken = process.env.TWILIO_AUTH_TOKEN
+        const accountSid = process.env.TWILIO_ACCOUNT_SID;
+        const authToken = process.env.TWILIO_AUTH_TOKEN;
         const client = twilio(accountSid, authToken);
 
         const customers = request.body.customers;
         const surveyLink = process.env.SURVEY_LINK;
         const orderRef = collection(db, "orders");
+
+        // Data Validation
+        // Customer array is required
+        if (!request.body.customers || !Array.isArray(request.body.customers)) {
+            return response.status(400).send({
+                message: "Invalid request: customers array is required",
+                success: false,
+            });
+        }
+        
+        // At least one customer is required
+        if (request.body.customers.length == 0) {
+            return response.status(400).send({
+                message: "Invalid request: at least one customer is required",
+                success: false,
+            });
+        }
+        
+        // Customer Data Requires a Name, Phone Number, and Order
+        for (const customer of request.body.customers) {
+            const { name, phoneNumber, orderNumber, date } = customer;
+            if (!name || !phoneNumber || !orderNumber || !date) {
+                return response.status(400).send({
+                    message: "Each customer must have name, phoneNumber, orderNumber, and date fields",
+                    success: false
+                    });
+            }
+            
+            // Phone Number Validation
+            if (!phoneNumber.match(/^\+1\d{10}$/)) {
+                return response.status(400).send({
+                    message: `Invalid phone number for ${name}. Must be in format: +1XXXXXXXXXX`,
+                    success: false
+                });
+            }
+        }
 
         const tasks = customers.map(async (customer) => {
             const { name, phoneNumber, orderNumber, date } = customer;
