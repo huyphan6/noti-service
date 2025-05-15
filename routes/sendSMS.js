@@ -73,7 +73,7 @@ router.post("/", async (request, response) => {
                 date: date,
             });
 
-            const messageBody = `Winn Cleaners: Hello ${name},\n\nYour order #${orderNumber} is ready for pickup! Please call us @ (617) 523-6860 or visit https://www.winncleaners.com/ with any questions or concerns.\n\nYour satisfaction is important to us. Would you mind taking a moment to share your feedback? We value your input! Click here ${surveyLink} to complete a short survey.\n\nThank you for choosing Winn Cleaners!`;
+            const messageBody = `Winn Cleaners: Hi ${name}, your order #${orderNumber} is ready for pickup!\n\nQuestions? Call (617) 523-6860 or visit https://www.winncleaners.com/ \n\nWe'd love your feedback: ${surveyLink}\n\nThank you for choosing Winn Cleaners!`;
 
             return client.messages.create({
                 to: phoneNumber,
