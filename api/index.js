@@ -8,6 +8,7 @@ import "dotenv/config";
 import sendSMS from "../routes/sendSMS.js";
 import getLogs from "../routes/getLogs.js";
 import sendReceiptCopy from "../routes/sendReceiptCopy.js";
+import sendReminder from "../routes/sendReminder.js";
 
 // Firebase imports here
 
@@ -17,6 +18,7 @@ app.use(cors());
 app.use("/sendSMS", sendSMS);
 app.use("/getLogs", getLogs)
 app.use("/sendReceiptCopy", sendReceiptCopy);
+app.use("/sendReminder", sendReminder);
 
 app.get("/", (req, res) => {
     res.send("Hey this is my API running 🥳");
