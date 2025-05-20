@@ -43,8 +43,8 @@ router.post("/", async (request, response) => {
 
         // Customer Data Requires a Name, Phone Number, and Order
         for (const customer of request.body.customers) {
-            const { name, phoneNumber, orderNumber, date } = customer;
-            if (!name || !phoneNumber || !orderNumber || !date) {
+            const { name, phoneNumber, orderNumber, initialPickupDate } = customer;
+            if (!name || !phoneNumber || !orderNumber || !initialPickupDate) {
                 return response.status(400).send({
                     message:
                         "Each customer must have name, phoneNumber, orderNumber, and date fields",
@@ -62,16 +62,24 @@ router.post("/", async (request, response) => {
         }
 
         const tasks = customers.map(async (customer) => {
-            const { name, phoneNumber, orderNumber, date } = customer;
+            const { name, phoneNumber, orderNumber, initialPickupDate } = customer;
+            // data to track reminders + expiration dates
+            const reminderSentDate = new Date()
+            const expirationDate = new Date(reminderSentDate)
+            expirationDate.setDate(expirationDate.getDate() + 30)
 
             await setDoc(doc(orderRef), {
                 name: name,
                 phoneNumber: phoneNumber,
                 orderNumber: orderNumber,
-                date: date,
+                initialPickupDate: initialPickupDate,
+                reminderSentDate: reminderSentDate.toISOString(),
+                expirationDate: expirationDate.toISOString(),
+                status: "reminded",
+                lastUpdated: reminderSentDate.toISOString(),
             });
 
-            const messageBody = `Winn Cleaners: Hi ${name}, you have an outstanding order #${orderNumber} from ${date}.\n\nOrders unclaimed after 90 days may be donated. Please pick up within 30 days.\n\nMore info: https://www.winncleaners.com/policy`;
+            const messageBody = `Winn Cleaners: Hi ${name}, you have an outstanding order #${orderNumber} from ${initialPickupDate}.\n\nOrders unclaimed after 90 days may be donated. Please pick up within 30 days.\n\nMore info: https://www.winncleaners.com/policy`;
 
             return client.messages.create({
                 to: phoneNumber,

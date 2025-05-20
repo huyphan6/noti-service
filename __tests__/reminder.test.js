@@ -11,8 +11,8 @@ describe("Order Reminder Endpoint", () => {
                     {
                         name: "Huy Phan",
                         phoneNumber: "+16174330481",
-                        orderNumber: "0101",
-                        date: "05/15/2024",
+                        orderNumber: "7643",
+                        initialPickupDate: "05/25/2024",
                     },
                 ],
             });
