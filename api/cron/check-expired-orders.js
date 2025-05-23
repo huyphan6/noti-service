@@ -9,11 +9,16 @@ import {
 import app from "../../firebaseConfig.js";
 
 const handler = async (req, res) => {
-    // Authenticate using Cron key from request headers
-    if (req.headers.apikey !== process.env.CRON_SECRET_KEY) {
+    // Authenticate using Vercel's cron headers
+    // Vercel includes these headers when triggering cron jobs
+    const isVercelCron =
+        req.headers["user-agent"]?.includes("vercel-cron") ||
+        req.headers["x-vercel-cron"];
+
+    if (!isVercelCron) {
         return res
             .status(401)
-            .send({ message: "Unauthorized", success: false });
+            .json({ message: "Unauthorized", success: false });
     }
 
     try {
