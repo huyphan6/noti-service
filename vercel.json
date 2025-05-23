@@ -8,14 +8,18 @@
     ],
     "routes": [
         {
+            "src": "/api/(.*)",
+            "dest": "/api/$1"
+        },
+        {
             "src": "/(.*)",
             "dest": "/api/index.js"
         }
     ],
     "crons": [
         {
-            "path" : "/api/cron/check-expired-orders",
-            "schedule" : "0 9 * * *"
+            "path": "/api/cron/check-expired-orders",
+            "schedule": "0 9 * * *"
         }
     ]
 }
