@@ -1,0 +1,77 @@
+import {
+    getFirestore,
+    collection,
+    query,
+    where,
+    getDocs,
+    updateDoc,
+} from "firebase/firestore";
+import app from "../../firebaseConfig.js";
+
+const handler = async (req, res) => {
+    // Authenticate using Cron key from request headers
+    if (req.headers.apikey !== process.env.CRON_SECRET_KEY) {
+        return res
+            .status(401)
+            .send({ message: "Unauthorized", success: false });
+    }
+
+    try {
+        const db = getFirestore(app);
+        const orderRemindersRef = collection(db, "reminders");
+        const today = new Date();
+
+        console.log("Starting expired orders check:", today.toISOString());
+
+        // Query for orders that have expired (30+ days after reminder)
+        const expiredOrdersQuery = query(
+            collection(db, "orders"),
+            where("expirationDate", "<", today),
+            where("status", "==", "reminded")
+        );
+
+        const expiredOrdersSnapshot = await getDocs(expiredOrdersQuery);
+
+        // If no expired orders, return early
+        if (expiredOrdersSnapshot.empty) {
+            console.log("No expired orders found");
+            return res.status(200).json({ message: "No expired orders found" });
+        }
+
+        // Process expired orders
+        const expiredItems = [];
+        const updatePromises = [];
+
+        expiredOrdersSnapshot.forEach((doc) => {
+            const data = doc.data();
+            expiredItems.push(data);
+
+            // Update status to expired (collect promises to execute in parallel)
+            updatePromises.push(
+                updateDoc(doc.ref, {
+                    status: "expired",
+                    lastUpdated: today.toISOString(),
+                })
+            );
+        });
+
+        // Execute all updates in parallel
+        await Promise.all(updatePromises);
+        console.log(`Found ${expiredItems.length} expired orders`);
+
+        // Send notification email to owner
+        // if (expiredItems.length > 0) {
+        //     await sendExpirationNotification(expiredItems);
+        // }
+
+        return res.status(200).json({
+            message: `Processed ${expiredItems.length} expired orders`,
+            expiredOrders: expiredItems,
+        });
+    } catch (error) {
+        console.error("Error checking expired orders:", error);
+        return res.status(500).json({ error: error.message });
+    }
+};
+
+export default handler;

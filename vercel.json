@@ -11,5 +11,11 @@
             "src": "/(.*)",
             "dest": "/api/index.js"
         }
+    ],
+    "crons": [
+        {
+            "path" : "/api/cron/check-expired-orders",
+            "schedule" : "0 9 * * *"
+        }
     ]
 }
