@@ -30,8 +30,8 @@ const handler = async (req, res) => {
 
         // Query for orders that have expired (30+ days after reminder)
         const expiredOrdersQuery = query(
-            collection(db, "orders"),
-            where("expirationDate", "<", today),
+            orderRemindersRef,
+            where("expirationDate", "<", today.toISOString()),
             where("status", "==", "reminded")
         );
 
