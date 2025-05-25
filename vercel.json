@@ -1,4 +1,25 @@
 {
+    "version": 2,
+    "builds": [
+        {
+            "src": "/api/index.js",
+            "use": "@vercel/node"
+        },
+        {
+            "src": "api/cron/check-expired-orders.js",
+            "use": "@vercel/node"
+        }
+    ],
+    "routes": [
+        {
+            "src": "^/api/cron/check-expired-orders$",
+            "dest": "/api/cron/check-expired-orders.js"
+        },
+        {
+            "src": "/(.*)",
+            "dest": "/api/index.js"
+        }
+    ],
     "crons": [
         {
             "path": "/api/cron/check-expired-orders",
