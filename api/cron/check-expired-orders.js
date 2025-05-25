@@ -8,6 +8,8 @@ import {
 } from "firebase/firestore";
 import app from "../../firebaseConfig.js";
 
+import sendExpirationEmail from "../../functions/sendExpirationEmail.js";
+
 const handler = async (req, res) => {
     // Authenticate using Vercel's cron headers
     // Vercel includes these headers when triggering cron jobs
@@ -65,14 +67,22 @@ const handler = async (req, res) => {
         console.log(`Found ${expiredItems.length} expired orders`);
 
         // Send notification email to owner
-        // if (expiredItems.length > 0) {
-        //     await sendExpirationNotification(expiredItems);
-        // }
-
-        return res.status(200).json({
-            message: `Processed ${expiredItems.length} expired orders`,
-            expiredOrders: expiredItems,
-        });
+        if (expiredItems.length > 0) {
+            const success = await sendExpirationEmail(expiredItems);
+            if (success) {
+                return res.status(200).json({
+                    message: `Processed ${expiredItems.length} expired orders`,
+                    expiredOrders: expiredItems,
+                });
+            } else {
+                return res
+                    .status(500)
+                    .json({ error: "There was an error sending the message" });
+            }
+        } else {
+            console.log("No expired orders found");
+            return res.status(200).json({ message: "No expired orders found" });
+        }
     } catch (error) {
         console.error("Error checking expired orders:", error);
         return res.status(500).json({ error: error.message });
