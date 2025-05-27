@@ -68,20 +68,28 @@ const handler = async (req, res) => {
 
         // Send notification email to owner
         if (expiredItems.length > 0) {
-            const success = await sendExpirationEmail(expiredItems);
-            if (success) {
-                return res.status(200).json({
-                    message: `Processed ${expiredItems.length} expired orders`,
-                    expiredOrders: expiredItems,
-                });
-            } else {
-                return res
-                    .status(500)
-                    .json({ error: "There was an error sending the message" });
+            console.log(
+                `Preparing to send an email for ${expiredItems.length} items`
+            );
+
+            try {
+                const success = await sendExpirationEmail(expiredItems);
+                if (success) {
+                    return res.status(200).json({
+                        message: `Processed ${expiredItems.length} expired orders`,
+                        expiredOrders: expiredItems,
+                    });
+                } else {
+                    return res.status(500).json({
+                        error: "There was an error sending the message",
+                    });
+                }
+            } catch (error) {
+                console.log(
+                    `There was an error trying to send the email ${error}`
+                );
+                res.status(500).json({ error: error.message });
             }
-        } else {
-            console.log("No expired orders found");
-            return res.status(200).json({ message: "No expired orders found" });
         }
     } catch (error) {
         console.error("Error checking expired orders:", error);
