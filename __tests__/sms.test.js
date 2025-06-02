@@ -2,9 +2,9 @@ import request from "supertest";
 import app from "../api/index.js";
 
 describe("SMS API Endpoint", () => {
-    test("POST /sendSMS", async () => {
+    test("POST /sms", async () => {
         const res = await request(app)
-            .post("/sendSMS")
+            .post("/sms")
             .set('apikey', process.env.API_KEY)  // Add the API key to headers
             .send({
                 customers: [
@@ -12,7 +12,7 @@ describe("SMS API Endpoint", () => {
                         name: "Huy Phan",
                         phoneNumber: "+16174330481",
                         orderNumber: "0000",
-                        date: "05/23/2025",
+                        date: "06/02/2025",
                     },
                 ],
             });

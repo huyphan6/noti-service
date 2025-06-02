@@ -35,7 +35,7 @@ router.post("/", async (request, response) => {
                 success: false,
             });
         }
-        
+
         // At least one customer is required
         if (request.body.customers.length == 0) {
             return response.status(400).send({
@@ -43,22 +43,23 @@ router.post("/", async (request, response) => {
                 success: false,
             });
         }
-        
+
         // Customer Data Requires a Name, Phone Number, and Order
         for (const customer of request.body.customers) {
             const { name, phoneNumber, orderNumber, date } = customer;
             if (!name || !phoneNumber || !orderNumber || !date) {
                 return response.status(400).send({
-                    message: "Each customer must have name, phoneNumber, orderNumber, and date fields",
-                    success: false
-                    });
+                    message:
+                        "Each customer must have name, phoneNumber, orderNumber, and date fields",
+                    success: false,
+                });
             }
-            
+
             // Phone Number Validation
             if (!phoneNumber.match(/^\+1\d{10}$/)) {
                 return response.status(400).send({
                     message: `Invalid phone number for ${name}. Must be in format: +1XXXXXXXXXX`,
-                    success: false
+                    success: false,
                 });
             }
         }
@@ -71,9 +72,11 @@ router.post("/", async (request, response) => {
                 phoneNumber: phoneNumber,
                 orderNumber: orderNumber,
                 date: date,
+                route: "/sms",
+                expectingReply: true
             });
 
-            const messageBody = `Winn Cleaners: Hi ${name}, your order #${orderNumber} is ready for pickup!\n\nQuestions? Call (617) 523-6860 or visit https://www.winncleaners.com/ \n\nWe'd love your feedback: ${surveyLink}\n\nThank you for choosing Winn Cleaners!`;
+            const messageBody = `Winn Cleaners: Hi ${name}, your order #${orderNumber} is ready for pickup!\n\nQuestions? Call (617) 523-6860 or visit https://www.winncleaners.com/ \n\nWe'd love your feedback: ${surveyLink}\n\nThank you for choosing Winn Cleaners!\n\nReply STOP to unsubscribe\nReply START to re-subscribe`;
 
             return client.messages.create({
                 to: phoneNumber,

@@ -2,9 +2,9 @@ import request from "supertest";
 import app from "../api/index.js";
 
 describe("Order Reminder Endpoint", () => {
-    test("POST /sendReminder", async () => {
+    test("POST /reminders", async () => {
         const res = await request(app)
-            .post("/sendReminder")
+            .post("/reminders")
             .set('apikey', process.env.API_KEY)  // Add the API key to headers
             .send({
                 customers: [
@@ -12,7 +12,7 @@ describe("Order Reminder Endpoint", () => {
                         name: "Huy Phan",
                         phoneNumber: "+16174330481",
                         orderNumber: "7643",
-                        initialPickupDate: "05/25/2024",
+                        initialPickupDate: "06/02/2024",
                     },
                 ],
             });

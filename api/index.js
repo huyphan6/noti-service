@@ -5,20 +5,26 @@ import cors from "cors";
 import "dotenv/config";
 
 // Route imports
-import sendSMS from "../routes/sendSMS.js";
+import sms from "../routes/sms.js";
 import getLogs from "../routes/getLogs.js";
 import sendReceiptCopy from "../routes/sendReceiptCopy.js";
-import sendReminder from "../routes/sendReminder.js";
+import reminders from "../routes/reminders.js";
+
+// Webhook import
+import inboundMessageWebhook from "../webhooks/inboundMessageWebhook.js"
 
 // Firebase imports here
 
 const app = express();
 app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ extended: false }));
+app.use(express.json());
 app.use(cors());
-app.use("/sendSMS", sendSMS);
+app.use("/sms", sms);
 app.use("/getLogs", getLogs)
 app.use("/sendReceiptCopy", sendReceiptCopy);
-app.use("/sendReminder", sendReminder);
+app.use("/reminders", reminders);
+app.use("/inboundMessageWebhook", inboundMessageWebhook)
 
 app.get("/", (req, res) => {
     res.send("Hey this is my API running 🥳");

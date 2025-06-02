@@ -2,7 +2,16 @@
 import express from "express";
 import twilio from "twilio";
 import app from "../firebaseConfig.js";
-import { getFirestore, doc, collection, setDoc } from "firebase/firestore";
+import {
+    getFirestore,
+    doc,
+    collection,
+    setDoc,
+    deleteDoc,
+    query,
+    where,
+    getDocs,
+} from "firebase/firestore";
 import "dotenv/config";
 
 const router = express.Router();
@@ -43,7 +52,8 @@ router.post("/", async (request, response) => {
 
         // Customer Data Requires a Name, Phone Number, and Order
         for (const customer of request.body.customers) {
-            const { name, phoneNumber, orderNumber, initialPickupDate } = customer;
+            const { name, phoneNumber, orderNumber, initialPickupDate } =
+                customer;
             if (!name || !phoneNumber || !orderNumber || !initialPickupDate) {
                 return response.status(400).send({
                     message:
@@ -62,11 +72,12 @@ router.post("/", async (request, response) => {
         }
 
         const tasks = customers.map(async (customer) => {
-            const { name, phoneNumber, orderNumber, initialPickupDate } = customer;
+            const { name, phoneNumber, orderNumber, initialPickupDate } =
+                customer;
             // data to track reminders + expiration dates
-            const reminderSentDate = new Date()
-            const expirationDate = new Date(reminderSentDate)
-            expirationDate.setDate(expirationDate.getDate() + 30)
+            const reminderSentDate = new Date();
+            const expirationDate = new Date(reminderSentDate);
+            expirationDate.setDate(expirationDate.getDate() + 30);
 
             await setDoc(doc(orderRef), {
                 name: name,
@@ -77,9 +88,11 @@ router.post("/", async (request, response) => {
                 expirationDate: expirationDate.toISOString(),
                 status: "reminded",
                 lastUpdated: reminderSentDate.toISOString(),
+                sentFromRoute: "/reminders",
+                expectingReply: true
             });
 
-            const messageBody = `Winn Cleaners: Hi ${name}, you have an outstanding order #${orderNumber} from ${initialPickupDate}.\n\nOrders unclaimed after 90 days may be donated. Please pick up within 30 days.\n\nMore info: https://www.winncleaners.com/policy`;
+            const messageBody = `Winn Cleaners: Hi ${name}, you have an outstanding order #${orderNumber} from ${initialPickupDate}.\n\nOrders unclaimed after 90 days may be donated. Please pick up within 30 days.\n\nReply "YES" to confirm you will pick up within 30 days.\nReply "NO" to have us donate your order.\n\nMore info: https://www.winncleaners.com/policy\n\nReply STOP to unsubscribe\nReply START to re-subscribe`;
 
             return client.messages.create({
                 to: phoneNumber,
@@ -99,7 +112,53 @@ router.post("/", async (request, response) => {
         });
     } catch (error) {
         console.log(error);
-        response.status(500).send(error);
+        return response.status(500).send(error);
+    }
+});
+
+router.delete("/:orderNumber", async (request, response) => {
+    try {
+        // Authenticate using API key from request headers
+        if (request.headers.apikey !== process.env.API_KEY) {
+            return response
+                .status(401)
+                .send({ message: "Unauthorized", success: false });
+        }
+
+        const orderRemindersRef = collection(db, "reminders");
+        const { orderNumber } = request.params;
+        const customer = request.body.customer;
+
+        const reminderDocumentQuery = query(
+            orderRemindersRef,
+            where("orderNumber", "==", orderNumber),
+            where("phoneNumber", "==", customer.phoneNumber)
+        );
+
+        // Get all matching docs
+        const reminderDocSnapshot = await getDocs(reminderDocumentQuery);
+
+        // Check if there are any matching documents
+        if (reminderDocSnapshot.empty) {
+            return response
+                .status(404)
+                .send({ message: "No reminder found", success: false });
+        }
+
+        const deletePromises = [];
+        reminderDocSnapshot.forEach((doc) => {
+            deletePromises.push(deleteDoc(doc.ref));
+        });
+
+        await Promise.all(deletePromises);
+
+        response.status(200).send({
+            message: "Reminder Deleted Successfully",
+            success: true,
+        });
+    } catch (error) {
+        console.log(error);
+        return response.status(500).send(error);
     }
 });
 
