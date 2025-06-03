@@ -90,7 +90,7 @@ router.post("/", async (request, response) => {
                 lastUpdated: reminderSentDate.toISOString(),
                 acknowledgement: "PENDING",
                 sentFromRoute: "/reminders",
-                expectingReply: true
+                expectingReply: true,
             });
 
             const messageBody = `Winn Cleaners: Hi ${name}, you have an outstanding order #${orderNumber} from ${initialPickupDate}.\n\nOrders unclaimed after 90 days may be donated. Please pick up within 30 days.\n\nReply "YES" to confirm you will pick up within 30 days.\nReply "NO" to have us donate your order.\n\nMore info: https://www.winncleaners.com/policy\n\nReply STOP to unsubscribe\nReply START to re-subscribe`;
@@ -107,13 +107,16 @@ router.post("/", async (request, response) => {
         response.status(200).send({
             message:
                 customers.length === 1
-                    ? `Message sent successfully`
-                    : `${totalMessages.length} Messages sent successfully`,
+                    ? `Reminder sent successfully`
+                    : `${totalMessages.length} reminders sent successfully`,
             success: true,
         });
     } catch (error) {
         console.log(error);
-        return response.status(500).send(error);
+        return response.status(500).send({
+            message: error,
+            success: false,
+        });
     }
 });
 

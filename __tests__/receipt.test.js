@@ -2,9 +2,9 @@ import request from "supertest";
 import app from "../api/index.js";
 
 describe("Receipt Copy Endpoint", () => {
-    test("POST /sendReceiptCopy", async () => {
+    test("POST /receipt", async () => {
         const res = await request(app)
-            .post("/sendReceiptCopy")
+            .post("/receipt")
             .send({
                 accountSid: process.env.TWILIO_ACCOUNT_SID,
                 authToken: process.env.TWILIO_AUTH_TOKEN,
