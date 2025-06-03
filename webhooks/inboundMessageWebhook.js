@@ -25,21 +25,23 @@ router.post("/", async (request, response) => {
 
         // Get the sender's phone number and the message body
         const fromNumber = request.body.From;
-        const incomingMsg = request.body.Body;
+        const incomingMsg = request.body.Body ? request.body.Body.trim() : "";
 
         // Check for missing required fields
-        if (!fromNumber || !incomingMsg || !incomingMsg.trim()) {
-            console.log("Missing phone number or message text in request.");
+        if (!fromNumber || !incomingMsg) {
+            console.log(
+                "400 - Missing phone number or message text in request."
+            );
             const twiml = new MessagingResponse();
             twiml.message(
                 "Missing phone number or message text in request. Please try again."
             );
-            return response.type("text/xml").status(400).send(twiml.toString());
+            return response.type("text/xml").status(200).send(twiml.toString());
         }
 
         // Handle and Store Opted Out Users
         const optOutKeywords = ["stop", "unsubscribe", "cancel", "end", "quit"];
-        if (optOutKeywords.includes(incomingMsg.trim().toLowerCase())) {
+        if (optOutKeywords.includes(incomingMsg.toLowerCase())) {
             console.log(`${fromNumber} has opted out.`);
 
             await setDoc(doc(db, "optOuts", fromNumber), {
@@ -53,7 +55,7 @@ router.post("/", async (request, response) => {
         }
 
         // Handle Order Reminder Acknowledgement
-        else if (incomingMsg.trim().toUpperCase() === "YES") {
+        else if (incomingMsg.toUpperCase() === "YES") {
             console.log(
                 `${fromNumber} has acknowledged and will pickup their order within 30 days`
             );
@@ -81,12 +83,12 @@ router.post("/", async (request, response) => {
                 twiml.message("Reponse Received. Thank You!");
                 response.type("text/xml").status(200).send(twiml.toString());
             } else {
-                console.log("Phone number not found");
+                console.log("404 - Phone number not found");
                 twiml.message(
                     "Oops! This record was not found. Please Try Again."
                 );
 
-                response.type("text/xml").status(404).send(twiml.toString());
+                response.type("text/xml").status(200).send(twiml.toString());
             }
         } else if (incomingMsg.toUpperCase() === "NO") {
             console.log(
@@ -116,26 +118,28 @@ router.post("/", async (request, response) => {
                 twiml.message("Reponse Received. Thank You!");
                 response.type("text/xml").status(200).send(twiml.toString());
             } else {
-                console.log("Phone number not found");
+                console.log("404 - Phone number not found");
                 twiml.message(
                     "Oops! This record was not found. Please try again."
                 );
 
-                response.type("text/xml").status(404).send(twiml.toString());
+                response.type("text/xml").status(200).send(twiml.toString());
             }
         } else {
-            twiml.message("Sorry that response is not accepted");
+            console.log("Bad Input");
+            twiml.message("Sorry, your response was not accepted. Please reply with YES, NO, or STOP.");
 
-            response.type("text/xml").status(400).send(twiml.toString());
+            response.type("text/xml").status(200).send(twiml.toString());
         }
     } catch (e) {
         console.log(e);
+        console.log("500 - Internal Server Error. Try Again");
 
         const twiml = new MessagingResponse();
         twiml.message(
             "Oops! There was an error. Please check your response and try again!"
         );
-        response.type("text/xml").status(500).send(twiml.toString());
+        response.type("text/xml").status(200).send(twiml.toString());
     }
 });
 
