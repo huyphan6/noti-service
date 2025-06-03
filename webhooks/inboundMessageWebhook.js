@@ -80,7 +80,7 @@ router.post("/", async (request, response) => {
 
                 await Promise.all(updatePromises);
 
-                twiml.message("Reponse Received. Thank You!");
+                twiml.message("Reponse Received. You have acknowledged to pickup your order within 30 days. Thank You!");
                 response.type("text/xml").status(200).send(twiml.toString());
             } else {
                 console.log("404 - Phone number not found");
@@ -115,7 +115,7 @@ router.post("/", async (request, response) => {
 
                 await Promise.all(updatePromises);
 
-                twiml.message("Reponse Received. Thank You!");
+                twiml.message("Response Received. You have acknowledged that you want your order donated. Thank You!");
                 response.type("text/xml").status(200).send(twiml.toString());
             } else {
                 console.log("404 - Phone number not found");
