@@ -126,7 +126,7 @@ router.post("/", async (request, response) => {
                 response.type("text/xml").status(200).send(twiml.toString());
             }
         } else {
-            console.log("Bad Input");
+            console.log("400 - Bad Input. Response not accepted. Please reply with YES, NO, or STOP.");
             twiml.message("Sorry, your response was not accepted. Please reply with YES, NO, or STOP.");
 
             response.type("text/xml").status(200).send(twiml.toString());

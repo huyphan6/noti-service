@@ -88,6 +88,7 @@ router.post("/", async (request, response) => {
                 expirationDate: expirationDate.toISOString(),
                 status: "reminded",
                 lastUpdated: reminderSentDate.toISOString(),
+                acknowledgement: "PENDING",
                 sentFromRoute: "/reminders",
                 expectingReply: true
             });
