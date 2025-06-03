@@ -6,8 +6,8 @@ import "dotenv/config";
 
 // Route imports
 import sms from "../routes/sms.js";
-import getLogs from "../routes/getLogs.js";
-import sendReceiptCopy from "../routes/sendReceiptCopy.js";
+import logs from "../routes/logs.js";
+import receipt from "../routes/receipt.js";
 import reminders from "../routes/reminders.js";
 
 // Webhook import
@@ -21,8 +21,8 @@ app.use(bodyParser.urlencoded({ extended: false }));
 app.use(express.json());
 app.use(cors());
 app.use("/sms", sms);
-app.use("/getLogs", getLogs)
-app.use("/sendReceiptCopy", sendReceiptCopy);
+app.use("/logs", logs)
+app.use("/receipt", receipt);
 app.use("/reminders", reminders);
 app.use("/inboundMessageWebhook", inboundMessageWebhook)
 

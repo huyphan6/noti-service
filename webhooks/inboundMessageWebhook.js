@@ -80,7 +80,9 @@ router.post("/", async (request, response) => {
 
                 await Promise.all(updatePromises);
 
-                twiml.message("Reponse Received. You have acknowledged to pickup your order within 30 days. Thank You!");
+                twiml.message(
+                    "Reponse Received. You have acknowledged to pickup your order within 30 days. Thank You!"
+                );
                 response.type("text/xml").status(200).send(twiml.toString());
             } else {
                 console.log("404 - Phone number not found");
@@ -115,7 +117,9 @@ router.post("/", async (request, response) => {
 
                 await Promise.all(updatePromises);
 
-                twiml.message("Response Received. You have acknowledged that you want your order donated. Thank You!");
+                twiml.message(
+                    "Response Received. You have acknowledged that you want your order donated. Thank You!"
+                );
                 response.type("text/xml").status(200).send(twiml.toString());
             } else {
                 console.log("404 - Phone number not found");
@@ -126,8 +130,12 @@ router.post("/", async (request, response) => {
                 response.type("text/xml").status(200).send(twiml.toString());
             }
         } else {
-            console.log("400 - Bad Input. Response not accepted. Please reply with YES, NO, or STOP.");
-            twiml.message("Sorry, your response was not accepted. Please reply with YES, NO, or STOP.");
+            console.log(
+                "400 - Bad Input. Response not accepted. Please reply with YES, NO, or STOP."
+            );
+            twiml.message(
+                "Sorry, your response was not accepted. Please reply with YES, NO, or STOP."
+            );
 
             response.type("text/xml").status(200).send(twiml.toString());
         }
