@@ -56,19 +56,17 @@ router.post("/", async (request, response) => {
 
         // Handle Order Reminder Acknowledgement
         else if (incomingMsg.toUpperCase() === "YES") {
-            console.log(
-                `${fromNumber} has acknowledged and will pickup their order within 30 days`
-            );
-
             const expiredOrderQuery = query(
                 orderRemindersRef,
-                where("phoneNumber", "==", fromNumber)
+                where("phoneNumber", "==", fromNumber),
+                where("sentFromRoute", "==", "/reminders"),
+                where("expectingReply", "==", true)
             );
             const expiredOrderSnapshot = await getDocs(expiredOrderQuery);
-
+            
             if (!expiredOrderSnapshot.empty) {
                 const updatePromises = [];
-
+                
                 expiredOrderSnapshot.forEach((doc) => {
                     updatePromises.push(
                         updateDoc(doc.ref, {
@@ -77,9 +75,12 @@ router.post("/", async (request, response) => {
                         })
                     );
                 });
-
+                
                 await Promise.all(updatePromises);
-
+                
+                console.log(
+                    `${fromNumber} has acknowledged and will pickup their order within 30 days`
+                );
                 twiml.message(
                     "Reponse Received. You have acknowledged to pickup your order within 30 days. Thank You!"
                 );
@@ -89,17 +90,15 @@ router.post("/", async (request, response) => {
                 twiml.message(
                     "Oops! This record was not found. Please Try Again."
                 );
-
+                
                 response.type("text/xml").status(200).send(twiml.toString());
             }
         } else if (incomingMsg.toUpperCase() === "NO") {
-            console.log(
-                `${fromNumber} has acknowledged and wants the items donated`
-            );
-
             const expiredOrderQuery = query(
                 orderRemindersRef,
-                where("phoneNumber", "==", fromNumber)
+                where("phoneNumber", "==", fromNumber),
+                where("sentFromRoute", "==", "/reminders"),
+                where("expectingReply", "==", true)
             );
             const expiredOrderSnapshot = await getDocs(expiredOrderQuery);
 
@@ -116,6 +115,9 @@ router.post("/", async (request, response) => {
                 });
 
                 await Promise.all(updatePromises);
+                console.log(
+                    `${fromNumber} has acknowledged and wants the items donated`
+                );
 
                 twiml.message(
                     "Response Received. You have acknowledged that you want your order donated. Thank You!"
