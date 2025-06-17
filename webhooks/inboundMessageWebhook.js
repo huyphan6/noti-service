@@ -72,6 +72,8 @@ router.post("/", async (request, response) => {
                         updateDoc(doc.ref, {
                             acknowledgement: "PICKUP",
                             lastUpdated: today.toISOString(),
+                            status: "acknowledged",
+                            expectingReply: false
                         })
                     );
                 });
@@ -110,6 +112,8 @@ router.post("/", async (request, response) => {
                         updateDoc(doc.ref, {
                             acknowledgement: "DONATE",
                             lastUpdated: today.toISOString(),
+                            status: "acknowledged",
+                            expectingReply: false
                         })
                     );
                 });
