@@ -5,6 +5,8 @@ import {
     where,
     getDocs,
     updateDoc,
+    or,
+    and,
 } from "firebase/firestore";
 import app from "../../firebaseConfig.js";
 
@@ -33,8 +35,13 @@ const handler = async (req, res) => {
         // Query for orders that have expired (30+ days after reminder)
         const expiredOrdersQuery = query(
             orderRemindersRef,
-            where("expirationDate", "<", today.toISOString()),
-            where("status", "==", "reminded")
+            and(
+                where("expirationDate", "<", today.toISOString()),
+                or(
+                    where("status", "==", "reminded"),
+                    where("status", "==", "acknowledged")
+                )
+            )
         );
 
         const expiredOrdersSnapshot = await getDocs(expiredOrdersQuery);
