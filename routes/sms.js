@@ -4,8 +4,18 @@ import twilio from "twilio";
 // import admin from "firebase-admin";
 import app from "../firebaseConfig.js";
 // import serviceAccount from "../serviceAccountKey.json" assert { type: "json" };
-import { getFirestore, doc, collection, setDoc } from "firebase/firestore";
+import {
+    getFirestore,
+    doc,
+    collection,
+    setDoc,
+    getDocs,
+    where,
+    limit,
+    query,
+} from "firebase/firestore";
 import "dotenv/config";
+import crypto from "crypto";
 
 const router = express.Router();
 const db = getFirestore(app);
@@ -67,32 +77,85 @@ router.post("/", async (request, response) => {
         const tasks = customers.map(async (customer) => {
             const { name, phoneNumber, orderNumber, date } = customer;
 
+            // Check if customer opted out of messages
+            const optOutQuery = query(
+                collection(db, "optOuts"),
+                where("phoneNumber", "==", phoneNumber),
+                limit(1)
+            );
+
+            const optOutSnapshot = await getDocs(optOutQuery);
+
+            if (!optOutSnapshot.empty) {
+                console.log(`${phoneNumber} has opted out — skipping.`);
+                return { customer, status: "skipped", reason: "opted out" };
+            }
+
+            // Create idempotency key based on phoneNumber, orderNumber, and date
+            const idempotencyKey = crypto
+                .createHash("sha256")
+                .update(`${phoneNumber}-${orderNumber}-${date}`)
+                .digest("hex");
+
+            // Check if message with this idempotency key was already sent
+            const existingOrderQuery = query(
+                orderRef,
+                where("idempotencyKey", "==", idempotencyKey),
+                limit(1)
+            );
+            const existingOrderSnapshot = await getDocs(existingOrderQuery);
+
+            if (!existingOrderSnapshot.empty) {
+                console.log(
+                    `Message to ${phoneNumber} for order ${orderNumber} on ${date} was already sent — skipping.`
+                );
+                return {
+                    customer,
+                    status: "skipped",
+                    reason: "duplicate message",
+                };
+            }
+
+            // Store order message record in Firestore
             await setDoc(doc(orderRef), {
                 name: name,
                 phoneNumber: phoneNumber,
                 orderNumber: orderNumber,
                 date: date,
                 route: "/sms",
-                expectingReply: true
+                expectingReply: false,
+                idempotencyKey: idempotencyKey,
+                status: "sent",
+                sentAt: new Date().toISOString(),
             });
 
             const messageBody = `Winn Cleaners: Hi ${name}, your order #${orderNumber} is ready for pickup!\n\nQuestions? Call (617) 523-6860 or visit https://www.winncleaners.com/ \n\nWe'd love your feedback: ${surveyLink}\n\nThank you for choosing Winn Cleaners!\n\nReply STOP to unsubscribe\nReply START to re-subscribe`;
 
-            return client.messages.create({
+            // Send SMS via Twilio
+            await client.messages.create({
                 to: phoneNumber,
                 from: process.env.TWILIO_PHONE_NUMBER,
                 body: messageBody,
             });
+
+            return { customer, status: "sent" };
         });
 
-        const totalMessages = await Promise.all(tasks);
+        const results = await Promise.all(tasks);
+
+        // Aggregate message statistics
+        const totalMessagesSent = results.filter((r) => r.status === "sent");
+        const skippedMessages = results.filter((r) => r.status === "skipped");
+
+        const summary = {
+            totalMessagesSent: totalMessagesSent.length,
+            totalMessagesSkipped: skippedMessages.length,
+            skippedMessagesDetails: skippedMessages,
+        };
 
         response.status(200).send({
-            message:
-                customers.length === 1
-                    ? `Message sent successfully`
-                    : `${totalMessages.length} Messages sent successfully`,
-            success: true,
+            message: summary,
+            success: totalMessagesSent.length > 0,
         });
     } catch (error) {
         console.log(error);
