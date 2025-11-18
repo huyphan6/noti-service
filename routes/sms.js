@@ -29,6 +29,7 @@ router.post("/", async (request, response) => {
                 .send({ message: "Unauthorized", success: false });
         }
 
+        // TODO: add failure paths if env vars are missing or invalid
         const accountSid = process.env.TWILIO_ACCOUNT_SID;
         const authToken = process.env.TWILIO_AUTH_TOKEN;
         const client = twilio(accountSid, authToken);
