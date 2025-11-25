@@ -14,8 +14,8 @@ import {
     limit,
     query,
 } from "firebase/firestore";
-import "dotenv/config";
 import crypto from "crypto";
+import { createTwilioClient } from "../lib/createTwilioClient.js";
 
 const router = express.Router();
 const db = getFirestore(app);
@@ -36,7 +36,7 @@ router.post("/", async (request, response) => {
                 .status(401)
                 .send({ message: "Invalid Authentication", success: false });
         }
-        const client = twilio(accountSid, authToken);
+        const client = createTwilioClient(accountSid, authToken);
 
         const customers = request.body.customers;
         const surveyLink = process.env.SURVEY_LINK;

@@ -1,7 +1,6 @@
 import express from "express";
 import bodyParser from "body-parser";
 import cors from "cors";
-import "dotenv/config";
 
 // Route imports
 import sms from "../routes/sms.js";
