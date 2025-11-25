@@ -28,17 +28,8 @@ import app from "../api/app.js";
 import testEnv from "./functions/testEnv.js";
 import { createTwilioClient } from "../lib/createTwilioClient.js";
 
-// * We need to patch each async op, e.g. twilio and firestore calls
-// * define beforeEach() function similar to setUp() in python
-// * create magic mocks with jest.fn(), we need to explicitly define nested attributes because jest.fn() creates empty objects
-// * attach return values to mock function using jest.fn().mockReturnValue(value) or async returns with jest.fn().mockResolvedValue()
-
 // store a copy of env vars
 const ORIGINAL_ENV = process.env;
-
-// * patch modules using jest.mock()
-// * patch single functions using jest.spyOn()
-// * mock fake data using jest.fn() == MagicMock()
 
 // functions that run before and after each test
 let server;
