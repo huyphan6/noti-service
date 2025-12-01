@@ -3,20 +3,23 @@
 1. **Test Behavior, Not Implementation Details**  
    - Focus on *what* the code should do, not *how* it does it.
 
-2. **Mock External Dependencies**  
+2. **Mock behavior when your code reacts to behavior** || 
+   **Mock return values when your code reacts to data**
+
+3. **Mock External Dependencies**  
    - Examples: API/network calls, SDK clients, DB connections.
 
-3. **Never Mock Your Own Code**  
+4. **Never Mock Your Own Code**  
    - You are trying to test it, not replace it.
 
-4. **Test Both Success and Failure Pathways**
+5. **Test Both Success and Failure Pathways**
 
-5. **A Mock Replaces Behavior, Not Data**  
+6. **A Mock Replaces Behavior, Not Data**  
    - Mocks intercept **calls and imports**, not assignments.  
    - Functions are mockable because they are **invoked**.  
    - Objects/values are not mockable because they are **looked up**, not executed.
 
-6. **Discern When to Mock vs When to Override**  
+7. **Discern When to Mock vs When to Override**  
    - Example: environment variables cannot be mocked; they must be **overridden**.  
    - Mock things with **behavior**. e.g. functions, methods, classes
    - Override things with **state**. e.g. strings, numbers, objects
@@ -52,6 +55,10 @@
 8. **Mock Functions Using `jest.fn()`**
 
 9. **In Jest, Anything That Is Executed or Resolved Can Be Mocked**
+
+10. **Resetting vs Restoring Mocks**  
+   - Use `.mockReturnValue()` in `beforeEach()` to reset return values.
+   - `.mockRestore()` method restores original implementations.
 
 ---
 

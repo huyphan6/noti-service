@@ -11,15 +11,19 @@ jest.mock("../lib/createTwilioClient.js", () => ({
 }));
 
 jest.mock("firebase/firestore", () => ({
-    getFirestore: jest.fn(() => ({})),
-    collection: jest.fn(() => ({})),
-    doc: jest.fn(() => ({})),
+    getFirestore: jest.fn().mockReturnValue({ db: "fake-db" }),
+    collection: jest.fn().mockReturnValue({ id: "fake-collection-ref" }),
+    doc: jest.fn().mockReturnValue({ docRef: "fake-doc-ref" }),
+    where: jest.fn().mockReturnValue({
+        type: "where",
+        field: "name",
+        op: "==",
+    }),
+    limit: jest.fn().mockReturnValue({ type: "limit", count: 1 }),
+    query: jest.fn().mockReturnValue({ type: "query", constraints: [] }),
+    getDocs: jest.fn().mockResolvedValue({ docs: [], empty: false }),
+    setDoc: jest.fn().mockResolvedValue(true),
     addDoc: jest.fn().mockResolvedValue({ id: "fake-id" }),
-    where: jest.fn(),
-    limit: jest.fn(),
-    query: jest.fn(),
-    getDocs: jest.fn().mockResolvedValue({ docs: [] }),
-    setDoc: jest.fn().mockResolvedValue(undefined),
 }));
 
 import request from "supertest";
@@ -27,6 +31,17 @@ import app from "../api/app.js";
 
 import testEnv from "./functions/testEnv.js";
 import { createTwilioClient } from "../lib/createTwilioClient.js";
+import {
+    getFirestore,
+    collection,
+    doc,
+    addDoc,
+    where,
+    limit,
+    query,
+    getDocs,
+    setDoc,
+} from "firebase/firestore";
 
 // store a copy of env vars
 const ORIGINAL_ENV = process.env;
@@ -64,7 +79,7 @@ describe("Authentication Validation", () => {
                     },
                 ],
             });
-        
+
         // assert successful response
         expect(res.statusCode).toBe(200);
         expect(res.body.error).toBeUndefined();
@@ -81,7 +96,7 @@ describe("Authentication Validation", () => {
             .send({
                 customers: [],
             });
-        
+
         // assert the correct error response message and status code
         expect(res.statusCode).toBe(401);
         expect(res.body.message).toBe("Unauthorized");
@@ -121,9 +136,12 @@ describe("Twilio Client Validation", () => {
         process.env.API_KEY = "test_api_key";
     });
 
-    test("Success: Twilio Client Init", async () => {
-        console.log("Before request:", createTwilioClient.mock.calls.length);
+    afterEach(() => {
+        // Restore original implementation of the mock
+        createTwilioClient.mockRestore();
+    });
 
+    test("Success: Twilio Client Init", async () => {
         // Call the post route
         const res = await request(app)
             .post("/sms")
@@ -139,8 +157,6 @@ describe("Twilio Client Validation", () => {
                 ],
             });
 
-        console.log("After request:", createTwilioClient.mock.calls.length);
-
         // assert twilio constructor called correctly
         expect(createTwilioClient).toHaveBeenCalledWith(
             "test_sid",
@@ -151,6 +167,7 @@ describe("Twilio Client Validation", () => {
 
     test("Failure: Twilio Client Init", async () => {
         // create a side effect of the mock to throw an error
+        // this is a function override which must be restored after the test
         createTwilioClient.mockImplementation(() => {
             throw new Error("Twilio Init Failed");
         });
@@ -177,4 +194,179 @@ describe("Twilio Client Validation", () => {
     // TODO: twilio message sending failure
 });
 
-// describe("Firebase Cloud Firestore Interactions", () => {});
+describe("Firebase Cloud Firestore Interactions", () => {
+    beforeEach(async () => {
+        // Set test env
+        process.env.TWILIO_ACCOUNT_SID = "test_sid";
+        process.env.TWILIO_AUTH_TOKEN = "test_auth_token";
+        process.env.API_KEY = "test_api_key";
+
+        // Restore return values before each test
+        collection.mockReturnValue({ id: "fake-collection-ref" });
+        where.mockReturnValue({ type: "where", field: "name", op: "==" });
+        limit.mockReturnValue({ type: "limit", count: 1 });
+    });
+
+    afterEach(async () => {
+        // Restore original implementations of the mocks
+        query.mockRestore();
+    })
+
+    test("Success: Valid Order Collection Reference", async () => {
+        // Call the post route
+        const res = await request(app)
+            .post("/sms")
+            .set("apikey", "test_api_key")
+            .send({
+                customers: [
+                    {
+                        name: "Alice",
+                        phoneNumber: "+14445556666",
+                        orderNumber: "1234",
+                        date: "11/18/2025",
+                    },
+                ],
+            });
+
+        // assert that the correct params were used to get the collection reference
+        expect(collection).toHaveBeenCalledWith({ db: "fake-db" }, "orders");
+        expect(collection).toHaveBeenCalledWith({ db: "fake-db" }, "optOuts");
+        expect(res.status).toBe(200);
+    });
+
+    test("Failure: Invalid Order Collection Reference", async () => {
+        // test behavior when collection returns invalid value
+        // we can do this by overriding the return value to be undefined\
+        collection.mockReturnValue(undefined);
+
+        // query() should throw when bad input is passed
+        query.mockImplementation(() => {
+            throw new Error("Invalid collection reference");
+        });
+
+        // Call the post route
+        const res = await request(app)
+            .post("/sms")
+            .set("apikey", "test_api_key")
+            .send({
+                customers: [
+                    {
+                        name: "Alice",
+                        phoneNumber: "+14445556666",
+                        orderNumber: "1234",
+                        date: "11/18/2025",
+                    },
+                ],
+            });
+
+        expect(res.status).toBe(500);
+    });
+
+    test("Success: Route Calls Query With Correct Params", async () => {
+        // Call the post route
+        const res = await request(app)
+            .post("/sms")
+            .set("apikey", "test_api_key")
+            .send({
+                customers: [
+                    {
+                        name: "Alice",
+                        phoneNumber: "+14445556666",
+                        orderNumber: "1234",
+                        date: "11/18/2025",
+                    },
+                ],
+            });
+
+        // query takes a collectionRef, a where clause, and optional param limit
+        // replace those values with the mocked ones defined above
+        expect(query).toHaveBeenCalledWith(
+            { id: "fake-collection-ref" },
+            { type: "where", field: "name", op: "==" },
+            { type: "limit", count: 1 }
+        );
+        expect(res.status).toBe(200);
+    });
+
+    test("Failure: Invalid Collection Param in Query Returns 500", async () => {
+        // Override return values
+        // Overridden values must be restored either before or after the test
+        collection.mockReturnValueOnce(undefined);
+
+        // query() should throw when bad input is passed
+        query.mockImplementation(() => {
+            throw new Error("Invalid collection reference");
+        });
+
+        // Call the post route
+        const res = await request(app)
+            .post("/sms")
+            .set("apikey", "test_api_key")
+            .send({
+                customers: [
+                    {
+                        name: "Alice",
+                        phoneNumber: "+14445556666",
+                        orderNumber: "1234",
+                        date: "11/18/2025",
+                    },
+                ],
+            });
+
+        expect(res.status).toBe(500);
+    });
+    test("Failure: Invalid Where Param in Query Returns 500", async () => {
+        // Override return values
+        // Overridden values must be restored either before or after the test
+        where.mockReturnValue(undefined)
+
+        // query() should throw when bad input is passed
+        query.mockImplementation(() => {
+            throw new Error("Invalid collection reference");
+        });
+
+        // Call the post route
+        const res = await request(app)
+            .post("/sms")
+            .set("apikey", "test_api_key")
+            .send({
+                customers: [
+                    {
+                        name: "Alice",
+                        phoneNumber: "+14445556666",
+                        orderNumber: "1234",
+                        date: "11/18/2025",
+                    },
+                ],
+            });
+
+        expect(res.status).toBe(500);
+    });
+    test("Failure: Invalid Limit Param in Query Returns 500", async () => {
+        // Override return values
+        // Overridden values must be restored either before or after the test
+        limit.mockReturnValue(undefined)
+
+        // query() should throw when bad input is passed
+        query.mockImplementation(() => {
+            throw new Error("Invalid collection reference");
+        });
+
+        // Call the post route
+        const res = await request(app)
+            .post("/sms")
+            .set("apikey", "test_api_key")
+            .send({
+                customers: [
+                    {
+                        name: "Alice",
+                        phoneNumber: "+14445556666",
+                        orderNumber: "1234",
+                        date: "11/18/2025",
+                    },
+                ],
+            });
+
+        expect(res.status).toBe(500);
+    });
+});
