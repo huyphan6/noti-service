@@ -19,6 +19,13 @@ import { createTwilioClient } from "../lib/createTwilioClient.js";
 
 const router = express.Router();
 const db = getFirestore(app);
+// Helper function to build idempotency key for a message based on phone number, order number, and date
+const buildIdempotencyKey = ({ phoneNumber, orderNumber, date }) => {
+    return crypto
+        .createHash("sha256")
+        .update(`${phoneNumber}-${orderNumber}-${date}`)
+        .digest("hex");
+};
 
 router.post("/", async (request, response) => {
     try {
@@ -41,6 +48,7 @@ router.post("/", async (request, response) => {
         const customers = request.body.customers;
         const surveyLink = process.env.SURVEY_LINK;
         const orderRef = collection(db, "orders");
+        const requestIdempotencyKeys = new Set();
 
         // Data Validation
         // Customer array is required
@@ -81,6 +89,20 @@ router.post("/", async (request, response) => {
 
         const tasks = customers.map(async (customer) => {
             const { name, phoneNumber, orderNumber, date } = customer;
+            const idempotencyKey = buildIdempotencyKey(customer);
+
+            if (requestIdempotencyKeys.has(idempotencyKey)) {
+                console.log(
+                    `Duplicate message to ${phoneNumber} for order ${orderNumber} on ${date} detected in request payload — skipping.`
+                );
+                return {
+                    customer,
+                    status: "skipped",
+                    reason: "duplicate message in request",
+                };
+            }
+
+            requestIdempotencyKeys.add(idempotencyKey);
 
             // Check if customer opted out of messages
             const optOutQuery = query(
@@ -95,12 +117,6 @@ router.post("/", async (request, response) => {
                 console.log(`${phoneNumber} has opted out — skipping.`);
                 return { customer, status: "skipped", reason: "opted out" };
             }
-
-            // Create idempotency key based on phoneNumber, orderNumber, and date
-            const idempotencyKey = crypto
-                .createHash("sha256")
-                .update(`${phoneNumber}-${orderNumber}-${date}`)
-                .digest("hex");
 
             // Check if message with this idempotency key was already sent
             const existingOrderQuery = query(
