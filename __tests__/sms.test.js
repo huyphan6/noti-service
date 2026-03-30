@@ -21,7 +21,7 @@ jest.mock("firebase/firestore", () => ({
     }),
     limit: jest.fn().mockReturnValue({ type: "limit", count: 1 }),
     query: jest.fn().mockReturnValue({ type: "query", constraints: [] }),
-    getDocs: jest.fn().mockResolvedValue({ docs: [], empty: false }),
+    getDocs: jest.fn().mockResolvedValue({ docs: [], empty: true }),
     setDoc: jest.fn().mockResolvedValue(true),
     addDoc: jest.fn().mockResolvedValue({ id: "fake-id" }),
 }));
@@ -47,17 +47,29 @@ import {
 const ORIGINAL_ENV = process.env;
 
 // functions that run before and after each test
-let server;
-
 beforeEach(() => {
     process.env = { ...ORIGINAL_ENV };
-    jest.resetModules();
-    server = app.listen(8080);
+    jest.clearAllMocks();
+
+    mockCreate.mockResolvedValue({ sid: "test-message-sid" });
+    createTwilioClient.mockImplementation(() => ({
+        messages: {
+            create: mockCreate,
+        },
+    }));
+
+    collection.mockReturnValue({ id: "fake-collection-ref" });
+    doc.mockReturnValue({ docRef: "fake-doc-ref" });
+    where.mockReturnValue({ type: "where", field: "name", op: "==" });
+    limit.mockReturnValue({ type: "limit", count: 1 });
+    query.mockReturnValue({ type: "query", constraints: [] });
+    getDocs.mockResolvedValue({ docs: [], empty: true });
+    setDoc.mockResolvedValue(true);
+    addDoc.mockResolvedValue({ id: "fake-id" });
 });
 
-afterEach((done) => {
+afterEach(() => {
     process.env = ORIGINAL_ENV;
-    server.close(done);
 });
 
 describe("Authentication Validation", () => {
@@ -134,11 +146,7 @@ describe("Twilio Client Validation", () => {
         process.env.TWILIO_ACCOUNT_SID = "test_sid";
         process.env.TWILIO_AUTH_TOKEN = "test_auth_token";
         process.env.API_KEY = "test_api_key";
-    });
-
-    afterEach(() => {
-        // Restore original implementation of the mock
-        createTwilioClient.mockRestore();
+        getDocs.mockResolvedValue({ docs: [], empty: true });
     });
 
     test("Success: Twilio Client Init", async () => {
@@ -190,6 +198,35 @@ describe("Twilio Client Validation", () => {
         // assert init failure with 500 status code
         expect(res.status).toBe(500);
     });
+
+    test("Skips duplicate customers within the same request payload", async () => {
+        const duplicateCustomer = {
+            name: "Alice",
+            phoneNumber: "+14445556666",
+            orderNumber: "1234",
+            date: "11/18/2025",
+        };
+
+        const res = await request(app)
+            .post("/sms")
+            .set("apikey", "test_api_key")
+            .send({
+                customers: [duplicateCustomer, duplicateCustomer],
+            });
+
+        expect(res.status).toBe(200);
+        expect(mockCreate).toHaveBeenCalledTimes(1);
+        expect(setDoc).toHaveBeenCalledTimes(1);
+        expect(res.body.message.totalMessagesSent).toBe(1);
+        expect(res.body.message.totalMessagesSkipped).toBe(1);
+        expect(res.body.message.skippedMessagesDetails).toEqual(
+            expect.arrayContaining([
+                expect.objectContaining({
+                    reason: "duplicate message in request",
+                }),
+            ])
+        );
+    });
     // TODO: twilio message sending success (mock twilio client.messages.create)
     // TODO: twilio message sending failure
 });
@@ -206,11 +243,6 @@ describe("Firebase Cloud Firestore Interactions", () => {
         where.mockReturnValue({ type: "where", field: "name", op: "==" });
         limit.mockReturnValue({ type: "limit", count: 1 });
     });
-
-    afterEach(async () => {
-        // Restore original implementations of the mocks
-        query.mockRestore();
-    })
 
     test("Success: Valid Order Collection Reference", async () => {
         // Call the post route
