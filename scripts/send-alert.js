@@ -17,14 +17,35 @@ const parseArgs = () => {
     const args = process.argv.slice(2);
 
     if (args.includes("--help") || args.includes("-h")) {
-        console.log(`
+        console.log(String.raw`
+_______AAAA____p_h_a_n____AAAA________
+       VVVV               VVVV        
+       (__)               (__)
+        \ \               / /
+         \ \   \\|||//   / /
+          > \   _   _   / <
+ here      > \ / \ / \ / <
+  to        > \\_o_o_// <
+   help!!!   > ( (_) ) <
+              >|     |<
+             / |\___/| \
+             / (_____) \
+             /         \
+              /   o   \
+               ) ___ (   
+              / /   \ \  
+             ( /     \ )
+             ><       ><
+            ///\     /\\\
+            '''       '''
+
 Usage:
-  node send-alert.js                    # Interactive mode
+  node send-alert.js # Interactive mode
   node send-alert.js --name "John" --phone "+16175551234" --order "12345" --date "04/15/2025"
 
 Options:
   --name     Customer name
-  --phone    Phone number (e.g., +16175551234 or 6175551234)
+  --phone    Phone number in +1 format (e.g. +16175551234)
   --order    Order number
   --date     Date in MM/DD/YYYY format
   --help     Show this help message
@@ -137,9 +158,15 @@ const main = async () => {
     console.log(`\nSending ${customers.length} alert(s)...`);
 
     for (const c of customers) {
-        console.log(
-            `  - ${c.name} | ${c.phoneNumber} | ${c.orderNumber} | ${c.date}`,
-        );
+        const name = c.name;
+        const phone = c.phoneNumber;
+        const order = c.orderNumber;
+        const date = c.date;
+        console.log(`   /~\\  ${name} | ${phone} | ${order} | ${date}`);
+        console.log(`   C oo                             `);
+        console.log(`   _( ^)                            `);
+        console.log(`  /   ~\\                           `);
+        console.log(`                                    `);
     }
 
     try {
